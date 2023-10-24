@@ -1,3 +1,5 @@
+// Description: Account package models and errors.
+
 package account
 
 import (
@@ -32,6 +34,8 @@ type TransferRequest struct {
 	Amount   float64 `json:"amount"`
 }
 
+// ValidateAmount validates the transfer request amount against the sender's balance.
+// Returns an error if the amount is invalid or insufficient.
 func (t TransferRequest) ValidateAmount(sender *Account) error {
 	if t.Amount <= 0 {
 		return ErrInvalidAmount
