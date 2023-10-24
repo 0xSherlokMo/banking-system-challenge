@@ -17,45 +17,47 @@ var (
 	ErrRecordNotFound = errors.New("record_not_found")
 )
 
-type document[object IdentifiedRecord] struct {
-	mu   sync.Mutex
-	data object
+type header struct {
+	latch sync.Mutex
 }
 
 type MemoryDB[T IdentifiedRecord] struct {
-	records map[Key]*document[T]
+	records map[Key]T
+	header  map[Key]*header
+	setnxmu sync.Mutex
 }
 
 func Default[T IdentifiedRecord]() *MemoryDB[T] {
 	return &MemoryDB[T]{
-		records: make(map[Key]*document[T]),
+		records: make(map[Key]T),
+		header:  make(map[Key]*header),
 	}
 }
 
 func (m *MemoryDB[T]) Setnx(key Key, record T) error {
-	_, exists := m.records[key]
+	m.setnxmu.Lock()
+	defer m.setnxmu.Unlock()
+	_, exists := m.header[key]
 	if exists {
 		return ErrRecordExists
 	}
 
-	m.records[key] = &document[T]{
-		data: record,
-	}
+	m.header[key] = new(header)
+	m.records[key] = record
 	return nil
 }
 
 func (m *MemoryDB[T]) Set(key Key, record T) {
-	row, exists := m.records[key]
+	pageHeader, exists := m.header[key]
 	if !exists {
-		m.records[key] = &document[T]{
-			data: record,
-		}
+		m.records[key] = record
+		m.header[key] = new(header)
 		return
 	}
 
-	row.mu.Lock()
-	defer row.mu.Unlock()
-	row.data = record
+	pageHeader.latch.Lock()
+	defer pageHeader.latch.Unlock()
+	m.records[key] = record
 }
 
 func (m *MemoryDB[T]) GetM(terms []Key) []T {
@@ -74,14 +76,15 @@ func (m *MemoryDB[T]) GetM(terms []Key) []T {
 
 func (m *MemoryDB[T]) Get(key Key) (T, error) {
 	var record T
-	row, exists := m.records[key]
+	header, exists := m.header[key]
 	if !exists {
 		return record, ErrRecordNotFound
 	}
 
-	row.mu.Lock()
-	defer row.mu.Unlock()
-	return row.data, nil
+	header.latch.Lock()
+	defer header.latch.Unlock()
+	document := m.records[key]
+	return document, nil
 }
 
 func (m *MemoryDB[T]) Keys() []Key {
