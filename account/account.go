@@ -6,6 +6,10 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	AccountIdPrefix = "account-"
+)
+
 type Account struct {
 	ID      uuid.UUID `json:"id"`
 	Name    string    `json:"name"`
@@ -13,5 +17,5 @@ type Account struct {
 }
 
 func (a *Account) GetID() string {
-	return fmt.Sprintf("account-%s", a.ID.String())
+	return fmt.Sprintf("%s-%s", AccountIdPrefix, a.ID.String())
 }
