@@ -1,6 +1,7 @@
 package account
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -8,6 +9,11 @@ import (
 
 const (
 	AccountIdPrefix = "account-"
+)
+
+var (
+	ErrInvalidAmount     = errors.New("invalid amount")
+	ErrInsufficientFunds = errors.New("insufficient funds")
 )
 
 type Account struct {
@@ -18,4 +24,22 @@ type Account struct {
 
 func (a *Account) GetID() string {
 	return fmt.Sprintf("%s-%s", AccountIdPrefix, a.ID.String())
+}
+
+type TransferRequest struct {
+	Sender   string  `json:"sender"`
+	Reciever string  `json:"reciever"`
+	Amount   float64 `json:"amount"`
+}
+
+func (t TransferRequest) ValidateAmount(sender *Account) error {
+	if t.Amount <= 0 {
+		return ErrInvalidAmount
+	}
+
+	if t.Amount > sender.Balance {
+		return ErrInsufficientFunds
+	}
+
+	return nil
 }
