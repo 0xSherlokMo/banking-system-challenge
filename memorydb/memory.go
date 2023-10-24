@@ -15,10 +15,18 @@ var (
 	ErrRowLocked      = errors.New("row_is_locked")
 	ErrRecordExists   = errors.New("record_exists")
 	ErrRecordNotFound = errors.New("record_not_found")
+	ErrUnlockedBefore = errors.New("unlocked_before")
 )
 
 type header struct {
 	latch sync.Mutex
+}
+
+type Opts struct {
+	/*
+		Shouldn't be enabled unless locked the key manually, or you want high available endpoint.
+	*/
+	Safe bool
 }
 
 type MemoryDB[T IdentifiedRecord] struct {
@@ -34,6 +42,33 @@ func Default[T IdentifiedRecord]() *MemoryDB[T] {
 	}
 }
 
+func (m *MemoryDB[T]) Lock(key Key) error {
+	pageHeader, exists := m.header[key]
+	if !exists {
+		return ErrRecordNotFound
+	}
+
+	ok := pageHeader.latch.TryLock()
+	if !ok {
+		return ErrRowLocked
+	}
+	return nil
+}
+
+func (m *MemoryDB[T]) Unlock(key Key) error {
+	pageHeader, exists := m.header[key]
+	if !exists {
+		return ErrRecordNotFound
+	}
+
+	ok := pageHeader.latch.TryLock()
+	defer pageHeader.latch.Unlock()
+	if ok {
+		return ErrUnlockedBefore
+	}
+	return nil
+}
+
 func (m *MemoryDB[T]) Setnx(key Key, record T) error {
 	m.setnxmu.Lock()
 	defer m.setnxmu.Unlock()
@@ -47,7 +82,12 @@ func (m *MemoryDB[T]) Setnx(key Key, record T) error {
 	return nil
 }
 
-func (m *MemoryDB[T]) Set(key Key, record T) {
+func (m *MemoryDB[T]) Set(key Key, record T, opts Opts) {
+	if !opts.Safe {
+		m.records[key] = record
+		return
+	}
+
 	pageHeader, exists := m.header[key]
 	if !exists {
 		m.records[key] = record
@@ -60,10 +100,10 @@ func (m *MemoryDB[T]) Set(key Key, record T) {
 	m.records[key] = record
 }
 
-func (m *MemoryDB[T]) GetM(terms []Key) []T {
+func (m *MemoryDB[T]) GetM(terms []Key, opts Opts) []T {
 	var records []T
 	for _, term := range terms {
-		record, err := m.Get(term)
+		record, err := m.Get(term, opts)
 		if err != nil {
 			continue
 		}
@@ -74,7 +114,15 @@ func (m *MemoryDB[T]) GetM(terms []Key) []T {
 	return records
 }
 
-func (m *MemoryDB[T]) Get(key Key) (T, error) {
+func (m *MemoryDB[T]) Get(key Key, opts Opts) (T, error) {
+	if !opts.Safe {
+		document, exists := m.records[key]
+		if !exists {
+			return document, ErrRecordNotFound
+		}
+		return document, nil
+	}
+
 	var record T
 	header, exists := m.header[key]
 	if !exists {
