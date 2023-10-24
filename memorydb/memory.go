@@ -41,6 +41,14 @@ type Opts struct {
 	Safe bool
 }
 
+const (
+	// Safe, but not highly available.
+	ConcurrentSafe = true
+
+	// Highly Available, but run at your own risk.
+	ConcurrentNotSafe = false
+)
+
 type MemoryDB[T IdentifiedRecord] struct {
 	records map[Key]T
 	header  map[Key]*header
