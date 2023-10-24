@@ -1,3 +1,7 @@
+// Package memorydb provides an in-memory database implementation that can be used to store and retrieve records.
+// It provides methods to lock and unlock records, set and get records, and retrieve all keys and records.
+// The MemoryDB type is generic and can store any type that implements the IdentifiedRecord interface.
+// The package also defines several errors that can be returned by the methods.
 package memorydb
 
 import (
@@ -7,14 +11,22 @@ import (
 
 type Key = string
 
+// IdentifiedRecord is an interface that must be implemented by any type that is stored in the MemoryDB.
 type IdentifiedRecord interface {
 	GetID() string
 }
 
 var (
-	ErrRowLocked      = errors.New("row_is_locked")
-	ErrRecordExists   = errors.New("record_exists")
+	// ErrRowLocked is returned when a row is locked.
+	ErrRowLocked = errors.New("row_is_locked")
+
+	// ErrRecordExists is returned when a record already exists.
+	ErrRecordExists = errors.New("record_exists")
+
+	// ErrRecordNotFound is returned when a record does not exist.
 	ErrRecordNotFound = errors.New("record_not_found")
+
+	// ErrUnlockedBefore is returned when a record is unlocked before trying to unlock it.
 	ErrUnlockedBefore = errors.New("unlocked_before")
 )
 
@@ -42,6 +54,8 @@ func Default[T IdentifiedRecord]() *MemoryDB[T] {
 	}
 }
 
+// Lock acquires a lock on the given key in the memory database.
+// If the key does not exist, it returns an error.
 func (m *MemoryDB[T]) Lock(key Key) error {
 	pageHeader, exists := m.header[key]
 	if !exists {
@@ -55,6 +69,7 @@ func (m *MemoryDB[T]) Lock(key Key) error {
 	return nil
 }
 
+// Unlock releases a lock on the given key in the memory database.
 func (m *MemoryDB[T]) Unlock(key Key) error {
 	pageHeader, exists := m.header[key]
 	if !exists {
@@ -69,6 +84,7 @@ func (m *MemoryDB[T]) Unlock(key Key) error {
 	return nil
 }
 
+// Setnx sets the given key to the given record in the memory database if not exists. otherwise returns an error.
 func (m *MemoryDB[T]) Setnx(key Key, record T) error {
 	m.setnxmu.Lock()
 	defer m.setnxmu.Unlock()
@@ -82,6 +98,7 @@ func (m *MemoryDB[T]) Setnx(key Key, record T) error {
 	return nil
 }
 
+// Set sets the given key to the given record in the memory database.
 func (m *MemoryDB[T]) Set(key Key, record T, opts Opts) {
 	if !opts.Safe {
 		m.records[key] = record
@@ -100,6 +117,7 @@ func (m *MemoryDB[T]) Set(key Key, record T, opts Opts) {
 	m.records[key] = record
 }
 
+// GetM returns the records for the given keys in the memory database.
 func (m *MemoryDB[T]) GetM(terms []Key, opts Opts) []T {
 	var records []T
 	for _, term := range terms {
@@ -114,6 +132,7 @@ func (m *MemoryDB[T]) GetM(terms []Key, opts Opts) []T {
 	return records
 }
 
+// Get returns the record for the given key in the memory database.
 func (m *MemoryDB[T]) Get(key Key, opts Opts) (T, error) {
 	if !opts.Safe {
 		document, exists := m.records[key]
@@ -135,6 +154,7 @@ func (m *MemoryDB[T]) Get(key Key, opts Opts) (T, error) {
 	return document, nil
 }
 
+// Keys returns all the keys in the MemoryDB.
 func (m *MemoryDB[T]) Keys() []Key {
 	var keys []Key
 	for k := range m.records {
@@ -143,6 +163,7 @@ func (m *MemoryDB[T]) Keys() []Key {
 	return keys
 }
 
+// Length returns the number of items in the MemoryDB.
 func (m *MemoryDB[T]) Length() int {
 	return len(m.records)
 }

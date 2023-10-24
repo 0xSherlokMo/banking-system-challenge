@@ -15,5 +15,6 @@ func main() {
 	engine := gin.Default()
 	router.InstallHealthRouter(engine)
 	router.InstallAccountRouter(engine, app)
+	app.Logger().Infow("System ready for transactions")
 	engine.Run(":" + os.Getenv("PORT"))
 }
