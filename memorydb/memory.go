@@ -12,8 +12,9 @@ type IdentifiedRecord interface {
 }
 
 var (
-	ErrRowLocked    = errors.New("row_is_locked")
-	ErrRecordExists = errors.New("record_exists")
+	ErrRowLocked      = errors.New("row_is_locked")
+	ErrRecordExists   = errors.New("record_exists")
+	ErrRecordNotFound = errors.New("record_not_found")
 )
 
 type document[object IdentifiedRecord] struct {
@@ -55,6 +56,32 @@ func (m *MemoryDB[T]) Set(key Key, record T) {
 	row.mu.Lock()
 	defer row.mu.Unlock()
 	row.data = record
+}
+
+func (m *MemoryDB[T]) GetM(terms []Key) []T {
+	var records []T
+	for _, term := range terms {
+		record, err := m.Get(term)
+		if err != nil {
+			continue
+		}
+
+		records = append(records, record)
+	}
+
+	return records
+}
+
+func (m *MemoryDB[T]) Get(key Key) (T, error) {
+	var record T
+	row, exists := m.records[key]
+	if !exists {
+		return record, ErrRecordNotFound
+	}
+
+	row.mu.Lock()
+	defer row.mu.Unlock()
+	return row.data, nil
 }
 
 func (m *MemoryDB[T]) Keys() []Key {

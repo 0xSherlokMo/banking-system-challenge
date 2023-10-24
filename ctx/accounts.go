@@ -37,11 +37,9 @@ func (d *DefaultContext) LoadAccounts() *DefaultContext {
 		)
 	}
 
-	for _, account := range accounts {
-		d.MemoryDB().Setnx(account.GetID(), &account)
+	for idx, account := range accounts {
+		d.MemoryDB().Setnx(account.GetID(), &accounts[idx])
 	}
-
-	d.Logger().Infow("Loaded accounts in memory", "accounts", d.MemoryDB().Length())
 
 	return d
 }
