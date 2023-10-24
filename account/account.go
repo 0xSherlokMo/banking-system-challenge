@@ -1,6 +1,8 @@
 package account
 
 import (
+	"fmt"
+
 	"github.com/google/uuid"
 )
 
@@ -11,5 +13,5 @@ type Account struct {
 }
 
 func (a *Account) GetID() string {
-	return a.ID.String()
+	return fmt.Sprintf("account-%s", a.ID.String())
 }
