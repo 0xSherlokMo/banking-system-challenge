@@ -16,5 +16,9 @@ func main() {
 	router.InstallHealthRouter(engine)
 	router.InstallAccountRouter(engine, app)
 	app.Logger().Infow("System ready for transactions")
-	engine.Run(":" + os.Getenv("PORT"))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	engine.Run(":" + port)
 }
