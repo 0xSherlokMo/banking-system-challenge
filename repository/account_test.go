@@ -39,7 +39,7 @@ type MoneyTransferTest struct {
 
 func TestMoneyTransfer(t *testing.T) {
 	ctx, tt := LoadMoneyTransferTestTable()
-	repositoryMock := repository.NewAccountRepository(&ctx)
+	repositoryMock := repository.NewAccountRepository(ctx)
 	for id, tc := range tt {
 		var wg sync.WaitGroup
 		for _, o := range tc.operations {
@@ -90,7 +90,7 @@ func TestMoneyTransfer(t *testing.T) {
 	}
 }
 
-func LoadMoneyTransferTestTable() (ctx.DefaultContext, []MoneyTransferTest) {
+func LoadMoneyTransferTestTable() (*ctx.DefaultContext, []MoneyTransferTest) {
 	ctx := ctx.NewDefaultContext().WithMemoryDB()
 
 	testTable := []MoneyTransferTest{
@@ -165,5 +165,5 @@ func LoadMoneyTransferTestTable() (ctx.DefaultContext, []MoneyTransferTest) {
 		db.Setnx(tc.SecondAccount.GetID(), tc.SecondAccount)
 	}
 
-	return *ctx, testTable
+	return ctx, testTable
 }

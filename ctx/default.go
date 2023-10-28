@@ -8,8 +8,18 @@ import (
 	"go.uber.org/zap"
 )
 
+type Database[T memorydb.IdentifiedRecord] interface {
+	Set(key string, record T, opts memorydb.Opts)
+	Setnx(key string, record T) error
+	GetM(terms []string, opts memorydb.Opts) []T
+	Get(key string, opts memorydb.Opts) (T, error)
+	Keys() []memorydb.Key
+	Length() int
+	Lock(key string) error
+	Unlock(key string) error
+}
 type DefaultContext struct {
-	db     *memorydb.MemoryDB[*account.Account]
+	db     Database[*account.Account]
 	logger *zap.SugaredLogger
 }
 
@@ -32,7 +42,7 @@ func (d *DefaultContext) WithMemoryDB() *DefaultContext {
 	return d
 }
 
-func (d *DefaultContext) MemoryDB() *memorydb.MemoryDB[*account.Account] {
+func (d *DefaultContext) MemoryDB() Database[*account.Account] {
 	if d.db == nil {
 		d.WithMemoryDB()
 	}
