@@ -24,6 +24,14 @@ type Account struct {
 	Balance float64   `json:"balance,string"`
 }
 
+func NewAccount(name string, balance float64) *Account {
+	return &Account{
+		ID:      uuid.New(),
+		Name:    name,
+		Balance: balance,
+	}
+}
+
 func (a *Account) GetID() string {
 	return fmt.Sprintf("%s-%s", AccountIdPrefix, a.ID.String())
 }

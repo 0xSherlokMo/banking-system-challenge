@@ -95,7 +95,7 @@ func (a *AccountRepository) PrepareAccounts(keys ...memorydb.Key) error {
 
 // added for readability
 func (a *AccountRepository) Rollback(keys ...memorydb.Key) {
-	a.Rollback(keys...)
+	a.unlock(keys...)
 }
 
 // added for readability
