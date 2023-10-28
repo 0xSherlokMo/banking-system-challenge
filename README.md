@@ -49,7 +49,7 @@ response:
 
 By default this is a highly-available endpoint, it won't gurantee balance consistency in case of an account locked (because of some transaction).
 
-To enable safety you can send `safe` query param as `?safe=true` to have a consistent balance sheets. I added this query param as not to make this endpoint very slow due to waiting to get an account; because it fetches all accounts. (we should add pagination to fix this bottlenick)
+To enable safety you can send `safe` query param as `?safe=true` to have a consistent balance sheets. I added this query param as not to make this endpoint very slow due to waiting to get an account during locking phase; because it fetches all accounts. (we should add pagination to fix this bottlenick)
 
 curl example to run endpoint:
 
