@@ -106,7 +106,7 @@ curl --location 'localhost:8080/accounts/0a637cbd-5aec-4c3b-8bf0-d8a5eb95024c/tr
 
 ## Scaling & architecture decisions
 
-Currently this service stores data on it's memory, it cannot scale that way because it's stateful. Although I added on `DefaultContext` an interface named `Database` 
+Currently this service stores data on it's memory, it won't scale this way because it's stateful. I added on `DefaultContext` an interface named `Database` to allow extendable architecture.
 
 ```go
 type Database[T memorydb.IdentifiedRecord] interface {
