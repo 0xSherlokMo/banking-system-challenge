@@ -121,10 +121,9 @@ type Database[T memorydb.IdentifiedRecord] interface {
 }
 ```
 
-In case of we needed to scale out another pod or a replicated node of this service, we can add a package that implements thses 
+In case of we needed to scale out another pod or a replicated node of this service, we can add a package that implements thses methods and talks to any other database over network ex: `Redis`, `Memcached`, `Mongodb`, etc.
 
 ## TODO
 
 - Add idempotency key to transfer endpoint, and in memory responses
 
-methods and talks to any other database over network ex: `Redis`, `Memcached`, `Mongodb`, etc.
